@@ -3,13 +3,13 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
+const app = express(); // ✅ تم تعريف app أولاً
+
 // استيراد الروتات
 const chatRoute = require("./routes/chat");
 const authRoute = require("./routes/auth");
 
-const app = express();
-
-// ✅ إعدادات CORS المعدلة للسماح لموقعك بالاتصال
+// ✅ إعدادات CORS
 app.use(cors({
   origin: 'https://remindme-isra-app.onrender.com', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -18,9 +18,9 @@ app.use(cors({
 
 app.use(express.json());
 
-// الروتات الأساسية
-if (chatRoute) app.use("/chat", chatRoute);
-if (authRoute) app.use("/auth", authRoute);
+// ✅ الروتات الأساسية مع إضافة /api لتتطابق مع الفرونت-إند
+if (chatRoute) app.use("/api/chat", chatRoute);
+if (authRoute) app.use("/api/auth", authRoute);
 
 app.get("/", (req, res) => res.send("RemindME Backend Running"));
 
