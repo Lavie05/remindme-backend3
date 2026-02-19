@@ -9,11 +9,16 @@ const authRoute = require("./routes/auth");
 
 const app = express();
 
-// Middlewares
-app.use(cors());
+// ✅ إعدادات CORS المعدلة للسماح لموقعك بالاتصال
+app.use(cors({
+  origin: 'https://remindme-isra-app.onrender.com', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
 app.use(express.json());
 
-// الروتات الأساسية - تأكد أن الملفات المصدرة هي Functions
+// الروتات الأساسية
 if (chatRoute) app.use("/chat", chatRoute);
 if (authRoute) app.use("/auth", authRoute);
 
