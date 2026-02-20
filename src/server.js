@@ -1,11 +1,16 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
+
+// استيراد الروتات (يجب إضافة .js في نهاية المسار عند استخدام ES Modules)
+import chatRoute from "./routes/chat.js";
+import authRoute from "./routes/auth.js";
+import taskRoute from "./routes/tasks.js";
 
 const app = express();
 
-// ✅ إعداد CORS بشكل يسمح بالوصول من أي مكان
+// ✅ إعداد CORS
 app.use(cors({
   origin: "*", 
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -14,22 +19,17 @@ app.use(cors({
 
 app.use(express.json());
 
-// 1️⃣ استيراد الروتات
-const chatRoute = require("./routes/chat");
-const authRoute = require("./routes/auth");
-const taskRoute = require("./routes/tasks"); // الروت الجديد للمهام
-
-// 2️⃣ تفعيل الروتات الأساسية
+// 2️⃣ تفعيل الروتات
 app.use("/api/chat", chatRoute);
 app.use("/auth", authRoute);
-app.use("/api/tasks", taskRoute); // ربط مسار المهام بالسيرفر
+app.use("/api/tasks", taskRoute);
 
-// Route اختبار للتأكد من أن السيرفر يعمل
+// Route اختبار
 app.get("/", (req, res) => {
   res.status(200).json({ message: "RemindME Backend is live and running!" });
 });
 
-// Middleware للتعامل مع الروابط غير الموجودة (404)
+// Middleware للتعامل مع الروابط غير الموجودة
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
@@ -51,7 +51,6 @@ mongoose.connect(MONGO_URI)
 
 // 4️⃣ تشغيل السيرفر
 const PORT = process.env.PORT || 5000;
-console.log(app._router.stack.filter(r => r.route).map(r => r.route.path));
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
