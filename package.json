@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Backend for RemindME app",
   "main": "src/server.js",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "start": "node src/server.js",
     "dev": "npx nodemon --watch src src/server.js"
