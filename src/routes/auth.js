@@ -1,7 +1,8 @@
-const express = require("express");
+import express from "express";
+import User from "../models/User.js"; // تأكدي من إضافة .js في النهاية
+import jwt from "jsonwebtoken";
+
 const router = express.Router();
-const User = require("../models/User");
-const jwt = require("jsonwebtoken"); // تأكدي من تثبيتها: npm install jsonwebtoken
 
 // دالة مساعدة لإنشاء التوكن
 const createToken = (id) => {
@@ -26,9 +27,12 @@ router.post("/register", async (req, res) => {
 
         const user = await newUser.save();
         
-        // ✅ إضافة توكن ليتمكن المستخدم من الدخول فوراً
         const token = createToken(user._id);
-        res.status(201).json({ message: "User created successfully!", token, username: user.username }); 
+        res.status(201).json({ 
+            message: "User created successfully!", 
+            token, 
+            username: user.username 
+        }); 
 
     } catch (error) {
         res.status(500).json({ error: "فشل إنشاء الحساب" });
@@ -45,7 +49,6 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ error: "بيانات الدخول غير صحيحة" });
         }
 
-        // ✅ توليد توكن عند تسجيل الدخول
         const token = createToken(user._id);
         res.status(200).json({ 
             message: "تم تسجيل الدخول بنجاح",
@@ -58,4 +61,4 @@ router.post("/login", async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router; // تأكدي أن هذا هو السطر الأخير

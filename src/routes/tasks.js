@@ -1,7 +1,8 @@
-const express = require("express");
+import express from "express";
+import Task from "../models/Task.js"; // تأكدي من إضافة .js
+import jwt from "jsonwebtoken";
+
 const router = express.Router();
-const Task = require("../models/Task");
-const jwt = require("jsonwebtoken");
 
 // Middleware للتحقق من التوكن واستخراج الـ User ID
 const auth = (req, res, next) => {
@@ -19,10 +20,10 @@ router.get("/", auth, async (req, res) => {
     try {
         const tasks = await Task.find({ userId: req.user.id }).sort({ createdAt: -1 });
         res.json(tasks);
-    } catch (err) { res.status(500).json(err); }
+    } catch (err) { res.status(500).json({ error: "خطأ في جلب المهام" }); }
 });
 
-// 2. إضافة مهمة جديدة يدوياً أو عبر AI
+// 2. إضافة مهمة جديدة
 router.post("/add", auth, async (req, res) => {
     try {
         const newTask = new Task({
@@ -33,32 +34,35 @@ router.post("/add", auth, async (req, res) => {
         });
         const savedTask = await newTask.save();
         res.status(201).json(savedTask);
-    } catch (err) { res.status(500).json(err); }
+    } catch (err) { res.status(500).json({ error: "فشل إضافة المهمة" }); }
 });
 
-// 3. حذف مهمة
-router.delete("/:id", auth, async (req, res) => {
+// 3. مسار جلب إحصائيات المهام (محدث ليعمل لكل مستخدم على حدة)
+router.get('/stats', auth, async (req, res) => {
     try {
-        await Task.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
-        res.json({ msg: "Task deleted successfully" });
-    } catch (err) { res.status(500).json(err); }
-});
-
-module.exports = router;// مسار لجلب إحصائيات المهام للمستخدم
-router.get('/stats', async (req, res) => {
-    try {
-        // هنا نقوم بعدّ المهام حسب حالتها
-        const totalTasks = await Task.countDocuments(); 
-        const completedTasks = await Task.countDocuments({ status: 'completed' });
-        const pendingTasks = await Task.countDocuments({ status: 'pending' });
+        const userId = req.user.id;
+        const totalTasks = await Task.countDocuments({ userId }); 
+        const highPriority = await Task.countDocuments({ userId, priority: 'high' });
+        const mediumPriority = await Task.countDocuments({ userId, priority: 'medium' });
+        const lowPriority = await Task.countDocuments({ userId, priority: 'low' });
 
         res.json({
             total: totalTasks,
-            completed: completedTasks,
-            pending: pendingTasks,
-            completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+            high: highPriority,
+            medium: mediumPriority,
+            low: lowPriority
         });
     } catch (error) {
         res.status(500).json({ message: "خطأ في جلب الإحصائيات" });
     }
 });
+
+// 4. حذف مهمة
+router.delete("/:id", auth, async (req, res) => {
+    try {
+        await Task.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        res.json({ msg: "Task deleted successfully" });
+    } catch (err) { res.status(500).json({ error: "فشل حذف المهمة" }); }
+});
+
+export default router;
