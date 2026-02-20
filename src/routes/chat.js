@@ -1,56 +1,89 @@
-const express = require("express");
-const router = express.Router();
-const axios = require("axios");
+import React, { useState } from 'react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import API_BASE_URL from './config';
+import './Register.css'; // نفس CSS للـ glass style
+import { FaPaperPlane } from 'react-icons/fa';
 
-router.post("/smart-schedule", async (req, res) => {
-    const { text } = req.body;
+const Chat = () => {
+    const [text, setText] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [responseData, setResponseData] = useState(null);
 
-    if (!text) {
-        return res.status(400).json({ error: "لا يوجد نص لتحليله" });
-    }
+    const handleSend = async () => {
+        if (!text.trim()) {
+            toast.error("⚠️ أدخل نص المهمة أولاً");
+            return;
+        }
 
-    try {
-        const response = await axios.post(
-            "https://api.openai.com/v1/chat/completions",
-            {
-                model: "gpt-3.5-turbo-0125", // نسخة مستقرة وتدعم JSON mode
-                messages: [
-                    {
-                        role: "system",
-                        content: `أنت مساعد متخصص في "منحنى النسيان - Forgetting Curve". 
-                        استخرج المهمة وحدد 3 مواعيد تذكير بصيغة ISO 8601 (الوقت الحالي هو: ${new Date().toISOString()}).
-                        يجب أن يكون الرد JSON حصراً بهذا الشكل:
-                        {
-                          "task": "اسم المهمة",
-                          "schedule": ["ISO_DATE_1", "ISO_DATE_2", "ISO_DATE_3"]
-                        }`
-                    },
-                    {
-                        role: "user",
-                        content: `حلل النص التالي وجدوله تكرارياً: "${text}"`
-                    }
-                ],
-                response_format: { type: "json_object" }, // إجبار الموديل على إرسال JSON
-                temperature: 0.5
-            },
-            {
-                headers: {
-                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-                    "Content-Type": "application/json"
-                }
-            }
-        );
+        setLoading(true);
+        setResponseData(null);
 
-        // فحص الرد وتجنب أخطاء الـ Parsing
-        const aiContent = response.data.choices[0].message.content;
-        const aiData = JSON.parse(aiContent);
-        
-        res.json(aiData);
+        try {
+            const { data } = await axios.post(`${API_BASE_URL}/api/chat/smart-schedule`, {
+                text
+            });
 
-    } catch (error) {
-        console.error("AI Error:", error.response?.data || error.message);
-        res.status(500).json({ error: "فشل الذكاء الاصطناعي في تحليل البيانات" });
-    }
-});
+            setResponseData(data);
+            toast.success("✨ المهمة جُمعت وجدولت بنجاح!");
+        } catch (err) {
+            console.error(err.response?.data || err.message);
+            toast.error("❌ فشل إرسال المهمة. حاول مرة أخرى");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-module.exports = router;
+    return (
+        <div className="modern-container" style={{ padding: '20px', maxWidth: '600px', margin: 'auto' }}>
+            <div className="glass-card" style={{ padding: '20px' }}>
+                <h2>💬 ذكاء التذكيرات الذكي</h2>
+                <p style={{ fontSize: '0.9rem', marginBottom: '15px' }}>اكتب المهمة وسأقوم بجدولتها لك تلقائياً</p>
+
+                <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="اكتب المهمة هنا..."
+                    rows={4}
+                    style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+                />
+
+                <button
+                    onClick={handleSend}
+                    disabled={loading}
+                    className="glow-button"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                >
+                    {loading ? "جاري المعالجة..." : <>جدول المهمة <FaPaperPlane /></>}
+                </button>
+<ul>
+    {responseData.schedule.map((date, index) => (
+        <li key={index} style={{ listStyle: 'none', marginBottom: '5px' }}>
+            📅 {new Date(date).toLocaleString('ar-EG', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            })}
+        </li>
+    ))}
+</ul>
+                {responseData && (
+                    <div style={{ marginTop: '20px', padding: '15px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', background: 'rgba(255,255,255,0.05)' }}>
+                        <h3>📝 المهمة:</h3>
+                        <p>{responseData.task}</p>
+                        <h3>⏰ مواعيد التذكير:</h3>
+                        <ul>
+                            {responseData.schedule.map((date, index) => (
+                                <li key={index}>{new Date(date).toLocaleString()}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default Chat;

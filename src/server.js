@@ -21,7 +21,7 @@ const taskRoute = require("./routes/tasks"); // الروت الجديد للمه
 
 // 2️⃣ تفعيل الروتات الأساسية
 app.use("/api/chat", chatRoute);
-app.use("/api/auth", authRoute);
+app.use("/auth", authRoute);
 app.use("/api/tasks", taskRoute); // ربط مسار المهام بالسيرفر
 
 // Route اختبار للتأكد من أن السيرفر يعمل
@@ -51,7 +51,7 @@ mongoose.connect(MONGO_URI)
 
 // 4️⃣ تشغيل السيرفر
 const PORT = process.env.PORT || 5000;
-
+console.log(app._router.stack.filter(r => r.route).map(r => r.route.path));
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
