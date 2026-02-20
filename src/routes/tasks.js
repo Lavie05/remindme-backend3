@@ -44,4 +44,21 @@ router.delete("/:id", auth, async (req, res) => {
     } catch (err) { res.status(500).json(err); }
 });
 
-module.exports = router;
+module.exports = router;// مسار لجلب إحصائيات المهام للمستخدم
+router.get('/stats', async (req, res) => {
+    try {
+        // هنا نقوم بعدّ المهام حسب حالتها
+        const totalTasks = await Task.countDocuments(); 
+        const completedTasks = await Task.countDocuments({ status: 'completed' });
+        const pendingTasks = await Task.countDocuments({ status: 'pending' });
+
+        res.json({
+            total: totalTasks,
+            completed: completedTasks,
+            pending: pendingTasks,
+            completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+        });
+    } catch (error) {
+        res.status(500).json({ message: "خطأ في جلب الإحصائيات" });
+    }
+});
