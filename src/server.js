@@ -3,33 +3,55 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
-const app = express(); // ✅ تم تعريف app أولاً
+const app = express();
 
-// استيراد الروتات
-const chatRoute = require("./routes/chat");
-const authRoute = require("./routes/auth");
-
-// ✅ إعدادات CORS
+// ✅ إعداد CORS بشكل يسمح بالوصول من أي مكان
 app.use(cors({
-  origin: 'https://remindme-isra-app.onrender.com', 
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 
-// ✅ الروتات الأساسية مع إضافة /api لتتطابق مع الفرونت-إند
-if (chatRoute) app.use("/api/chat", chatRoute);
-if (authRoute) app.use("/api/auth", authRoute);
+// 1️⃣ استيراد الروتات
+const chatRoute = require("./routes/chat");
+const authRoute = require("./routes/auth");
+const taskRoute = require("./routes/tasks"); // الروت الجديد للمهام
 
-app.get("/", (req, res) => res.send("RemindME Backend Running"));
+// 2️⃣ تفعيل الروتات الأساسية
+app.use("/api/chat", chatRoute);
+app.use("/api/auth", authRoute);
+app.use("/api/tasks", taskRoute); // ربط مسار المهام بالسيرفر
 
-// الاتصال بـ MongoDB
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/remindme";
+// Route اختبار للتأكد من أن السيرفر يعمل
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "RemindME Backend is live and running!" });
+});
+
+// Middleware للتعامل مع الروابط غير الموجودة (404)
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
+// 3️⃣ الاتصال بـ MongoDB
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI not defined in environment variables");
+  process.exit(1);
+}
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+  .catch(err => {
+    console.error("❌ MongoDB connection error:", err);
+    process.exit(1);
+  });
 
+// 4️⃣ تشغيل السيرفر
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});

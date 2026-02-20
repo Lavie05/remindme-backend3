@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios"); // تأكدي من عمل npm install axios
+const axios = require("axios");
 
-// روت استقبال النص وجدولته ذكياً
 router.post("/smart-schedule", async (req, res) => {
     const { text } = req.body;
 
@@ -14,40 +13,43 @@ router.post("/smart-schedule", async (req, res) => {
         const response = await axios.post(
             "https://api.openai.com/v1/chat/completions",
             {
-                model: "gpt-3.5-turbo",
+                model: "gpt-3.5-turbo-0125", // نسخة مستقرة وتدعم JSON mode
                 messages: [
                     {
                         role: "system",
-                        content: `أنت مساعد ذكي متخصص في الذاكرة البشرية. 
-                        مهمتك هي استخراج المهمة من النص وتحديد 3 مواعيد تذكير لها بناءً على منحنى النسيان (بعد ساعة، بعد 24 ساعة، بعد أسبوع). 
-                        أخرج النتيجة بتنسيق JSON حصراً كالتالي:
+                        content: `أنت مساعد متخصص في "منحنى النسيان - Forgetting Curve". 
+                        استخرج المهمة وحدد 3 مواعيد تذكير بصيغة ISO 8601 (الوقت الحالي هو: ${new Date().toISOString()}).
+                        يجب أن يكون الرد JSON حصراً بهذا الشكل:
                         {
-                          "task": "اسم المهمة المستخرجة",
-                          "schedule": ["تاريخ/وقت 1", "تاريخ/وقت 2", "تاريخ/وقت 3"]
+                          "task": "اسم المهمة",
+                          "schedule": ["ISO_DATE_1", "ISO_DATE_2", "ISO_DATE_3"]
                         }`
                     },
                     {
                         role: "user",
-                        content: `حلل هذا النص: "${text}"`
+                        content: `حلل النص التالي وجدوله تكرارياً: "${text}"`
                     }
                 ],
-                temperature: 0.7
+                response_format: { type: "json_object" }, // إجبار الموديل على إرسال JSON
+                temperature: 0.5
             },
             {
                 headers: {
-                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`, // نستخدم المفتاح من ملف .env
+                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
                     "Content-Type": "application/json"
                 }
             }
         );
 
-        // إرسال الخطة الذكية للفرونت-إند
-        const aiData = JSON.parse(response.data.choices[0].message.content);
+        // فحص الرد وتجنب أخطاء الـ Parsing
+        const aiContent = response.data.choices[0].message.content;
+        const aiData = JSON.parse(aiContent);
+        
         res.json(aiData);
 
     } catch (error) {
-        console.error("OpenAI Error:", error.response?.data || error.message);
-        res.status(500).json({ error: "فشل الذكاء الاصطناعي في جدولة التذكير" });
+        console.error("AI Error:", error.response?.data || error.message);
+        res.status(500).json({ error: "فشل الذكاء الاصطناعي في تحليل البيانات" });
     }
 });
 
