@@ -33,5 +33,5 @@ const TaskSchema = new mongoose.Schema({
     }
 });
 
-// تصحيح: استخدام export default بدلاً من module.exports
+// تصحيح: استخدام export default بدلً من module.exports
 export default mongoose.model("Task", TaskSchema);
