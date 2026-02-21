@@ -4,7 +4,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import { YoutubeTranscript } from 'youtube-transcript';
 
-// استيراد المسارات (تأكدي من وجود الملفات في مجلد routes)
+// استيراد المسارات
 import chatRoute from "./routes/chat.js";
 import authRoute from "./routes/auth.js";
 import taskRoute from "./routes/tasks.js";
@@ -36,9 +36,10 @@ app.post('/api/ai/youtube-text', async (req, res) => {
 });
 
 // --- 3. ربط المسارات (Routes) ---
-app.use("/auth", authRoute);           // مسارات التسجيل والدخول
-app.use("/api/tasks", taskRoute);     // مسارات المهام
-app.use("/api/chat", chatRoute);       // مسارات الشات (إن وجدت)
+// تم التعديل هنا ليتوافق مع الرابط الذي يطلبه الـ Frontend (api/auth/register)
+app.use("/api/auth", authRoute);      // التعديل: إضافة /api هنا
+app.use("/api/tasks", taskRoute);     
+app.use("/api/chat", chatRoute);       
 
 // --- 4. فحص السيرفر ---
 app.get("/", (req, res) => {
@@ -50,7 +51,7 @@ const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
     .then(() => {
         console.log("✅ Connected to MongoDB");
-        const PORT = process.env.PORT || 5000;
+        const PORT = process.env.PORT || 10000; // Render يفضل استخدام 10000
         app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
     })
     .catch(err => console.error("❌ DB Connection Error:", err));
